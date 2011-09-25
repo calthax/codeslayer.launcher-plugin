@@ -1,0 +1,119 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/1481/plugins/launcher
+END
+configure
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1481/plugins/launcher/configure
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/1394/plugins/launcher/Makefile.in
+END
+AUTHORS
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/AUTHORS
+END
+depcomp
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/depcomp
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1392/plugins/launcher/ChangeLog
+END
+compile
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/compile
+END
+config.guess
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/1392/plugins/launcher/config.guess
+END
+launcher.codeslayer-plugin.in
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/1394/plugins/launcher/launcher.codeslayer-plugin.in
+END
+config.sub
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1392/plugins/launcher/config.sub
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/1392/plugins/launcher/README
+END
+ltmain.sh
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1392/plugins/launcher/ltmain.sh
+END
+configure.ac
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/1481/plugins/launcher/configure.ac
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/INSTALL
+END
+COPYING
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/COPYING
+END
+missing
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1392/plugins/launcher/missing
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/1393/plugins/launcher/Makefile.am
+END
+NEWS
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/1392/plugins/launcher/NEWS
+END
+aclocal.m4
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1392/plugins/launcher/aclocal.m4
+END
+install-sh
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1392/plugins/launcher/install-sh
+END
