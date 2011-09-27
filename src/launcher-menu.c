@@ -69,7 +69,7 @@ launcher_menu_new (GtkAccelGroup *accel_group)
   menu = g_object_new (launcher_menu_get_type (), NULL);
   
   gtk_widget_add_accelerator (menu, "activate", 
-                              accel_group, GDK_F8, 0, GTK_ACCEL_VISIBLE);  
+                              accel_group, GDK_KEY_F8, 0, GTK_ACCEL_VISIBLE);  
 
   g_signal_connect_swapped (G_OBJECT (menu), "activate", 
                             G_CALLBACK (run_action), menu);
