@@ -1,8 +1,3 @@
-INCLUDES = \
-    $(LAUNCHERCODESLAYERPLUGIN_CFLAGS) \
-    -I$(top_srcdir) \
-    -I$(srcdir)
-
 lib_LTLIBRARIES = liblaunchercodeslayerplugin.la
 
 liblaunchercodeslayerplugin_la_SOURCES = \
@@ -18,4 +13,4 @@ liblaunchercodeslayerplugin_la_SOURCES = \
     launcher-menu.h \
     launcher-menu.c
 
-liblaunchercodeslayerplugin_la_CPPFLAGS = -I$(top_srcdir)
+liblaunchercodeslayerplugin_la_CPPFLAGS = $(LAUNCHERCODESLAYERPLUGIN_CFLAGS) -I$(top_srcdir) -I$(srcdir)

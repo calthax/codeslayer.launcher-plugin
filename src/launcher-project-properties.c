@@ -93,7 +93,7 @@ static void
 add_form (LauncherProjectProperties *project_properties)
 {
   LauncherProjectPropertiesPrivate *priv;
-  GtkWidget *table;
+  GtkWidget *grid;
 
   GtkWidget *executable_label;
   GtkWidget *executable_entry;
@@ -101,48 +101,49 @@ add_form (LauncherProjectProperties *project_properties)
   GtkWidget *parameters_label;
   GtkWidget *parameters_entry;
 
+  GtkWidget *spacer;
   GtkWidget *hbox;
   GtkWidget *terminal_check_button;
 
   priv = LAUNCHER_PROJECT_PROPERTIES_GET_PRIVATE (project_properties);
 
-  table = gtk_table_new (4, 2, FALSE);
+  grid = gtk_grid_new ();
+  gtk_grid_set_row_spacing (GTK_GRID (grid), 2);
 
   executable_label = gtk_label_new ("Executable:");
   gtk_misc_set_alignment (GTK_MISC (executable_label), 1, .5);
-  gtk_table_attach (GTK_TABLE (table), executable_label, 
-                    0, 1, 0, 1, GTK_FILL, GTK_SHRINK, 4, 0);
+  gtk_misc_set_padding (GTK_MISC (executable_label), 4, 0);
+  gtk_grid_attach (GTK_GRID (grid), executable_label, 0, 0, 1, 1);
                     
   executable_entry = gtk_entry_new ();
   priv->executable_entry = executable_entry;
   gtk_entry_set_width_chars (GTK_ENTRY (executable_entry), 50);
   gtk_entry_set_icon_from_stock (GTK_ENTRY (executable_entry), 
                                  GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_FILE);
-  gtk_table_attach (GTK_TABLE (table), executable_entry, 1, 2, 0, 1,
-                    GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL, 4, 1);
+  gtk_grid_attach_next_to (GTK_GRID (grid), executable_entry, executable_label, 
+                           GTK_POS_RIGHT, 1, 1);
                       
   parameters_label = gtk_label_new ("Parameters:");
   gtk_misc_set_alignment (GTK_MISC (parameters_label), 1, .5);
-  gtk_table_attach (GTK_TABLE (table), parameters_label, 
-                    0, 1, 1, 2, GTK_FILL, GTK_SHRINK, 4, 0);
+  gtk_misc_set_padding (GTK_MISC (parameters_label), 4, 0);
+  gtk_grid_attach (GTK_GRID (grid), parameters_label, 0, 1, 1, 1);
   
   parameters_entry = gtk_entry_new ();
   priv->parameters_entry = parameters_entry;
   gtk_entry_set_width_chars (GTK_ENTRY (parameters_entry), 50);
-  gtk_table_attach (GTK_TABLE (table), parameters_entry, 1, 2, 1, 2,
-                    GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL, 4, 1);
-                      
+  gtk_grid_attach_next_to (GTK_GRID (grid), parameters_entry, parameters_label, 
+                           GTK_POS_RIGHT, 1, 1);
+
+  spacer = gtk_label_new ("");
+  gtk_grid_attach (GTK_GRID (grid), spacer, 0, 2, 1, 1);
 
   terminal_check_button = gtk_check_button_new_with_label ("Run In Terminal");
   priv->terminal_check_button = terminal_check_button;
-  hbox = gtk_hbox_new (FALSE, 0);                      
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);                      
   gtk_box_pack_start (GTK_BOX (hbox), terminal_check_button, FALSE, FALSE, 0);
-
-  gtk_table_attach (GTK_TABLE (table), hbox, 1, 2, 2, 3,
-                    GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 4, 1);
+  gtk_grid_attach_next_to (GTK_GRID (grid), hbox, spacer, GTK_POS_RIGHT, 1, 1);
                       
-  gtk_box_pack_start (GTK_BOX (project_properties), table, FALSE, FALSE, 2);
-  
+  gtk_box_pack_start (GTK_BOX (project_properties), grid, FALSE, FALSE, 3);
 
   g_signal_connect (G_OBJECT (executable_entry), "icon-press",
                     G_CALLBACK (executable_icon_action), project_properties);
