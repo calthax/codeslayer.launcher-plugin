@@ -239,6 +239,7 @@ save_config_action (LauncherEngine *engine,
 
   codeslayer_utils_save_keyfile (keyfile, file_path);  
   g_key_file_free (keyfile);
+  g_free (folder_path);
   g_free (file_path); 
 }
 
