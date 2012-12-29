@@ -4,8 +4,8 @@ liblaunchercodeslayerplugin_la_SOURCES = \
     launcher-plugin.c \
     launcher-engine.h \
     launcher-engine.c \
-    launcher-configuration.h \
-    launcher-configuration.c \
+    launcher-config.h \
+    launcher-config.c \
     launcher-project-properties.h \
     launcher-project-properties.c \
     launcher-projects-popup.h \

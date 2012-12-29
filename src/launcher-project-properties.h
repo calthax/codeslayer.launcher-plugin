@@ -21,7 +21,7 @@
 
 #include <gtk/gtk.h>
 #include <codeslayer/codeslayer.h>
-#include "launcher-configuration.h"
+#include "launcher-config.h"
 
 G_BEGIN_DECLS
 
@@ -43,7 +43,7 @@ struct _LauncherProjectPropertiesClass
 {
   GtkVBoxClass parent_class;
   
-  void (*save_configuration) (LauncherProjectProperties *project_properties);  
+  void (*save_config) (LauncherProjectProperties *project_properties);  
 };
 
 GType launcher_project_properties_get_type (void) G_GNUC_CONST;
@@ -51,11 +51,11 @@ GType launcher_project_properties_get_type (void) G_GNUC_CONST;
 GtkWidget*  launcher_project_properties_new  (void);
 
 void launcher_project_properties_opened      (LauncherProjectProperties *project_properties,
-                                            LauncherConfiguration   *configuration, 
+                                            LauncherConfig   *config, 
                                             CodeSlayerProject       *project);
 
 void launcher_project_properties_saved       (LauncherProjectProperties *project_properties,
-                                            LauncherConfiguration   *configuration, 
+                                            LauncherConfig   *config, 
                                             CodeSlayerProject       *project);
 
 G_END_DECLS

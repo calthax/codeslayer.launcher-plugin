@@ -49,8 +49,6 @@ LauncherEngine*  launcher_engine_new (CodeSlayer *codeslayer,
                                   GtkWidget  *menu,
                                   GtkWidget  *project_properties,
                                   GtkWidget  *projects_menu);
-                                        
-void launcher_engine_load_configurations (LauncherEngine *engine);
 
 G_END_DECLS
 

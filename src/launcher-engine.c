@@ -19,33 +19,32 @@
 #include <codeslayer/codeslayer-utils.h>
 #include "launcher-engine.h"
 #include "launcher-project-properties.h"
-#include "launcher-configuration.h"
+#include "launcher-config.h"
 
-static void launcher_engine_class_init                          (LauncherEngineClass   *klass);
-static void launcher_engine_init                                (LauncherEngine        *engine);
-static void launcher_engine_finalize                            (LauncherEngine        *engine);
+#define MAIN "main"
+#define EXECUTABLE "executable"
+#define PARAMETERS "parameters"
+#define TERMINAL "terminal"
+#define LAUNCHER_CONF "launcher.conf"
 
-static void run_action                                          (LauncherEngine        *engine);
-static void project_run_action                                  (LauncherEngine        *engine, 
-                                                                 GList                 *selections);
+static void launcher_engine_class_init            (LauncherEngineClass *klass);
+static void launcher_engine_init                  (LauncherEngine      *engine);
+static void launcher_engine_finalize              (LauncherEngine      *engine);
 
-static LauncherConfiguration* get_configuration_by_project_key  (LauncherEngine        *engine, 
-                                                                 const gchar           *project_key);
-
-static void project_properties_opened_action                    (LauncherEngine        *engine,
-                                                                 CodeSlayerProject     *project);
-static void project_properties_saved_action                     (LauncherEngine        *engine,
-                                                                 CodeSlayerProject     *project);
-                                                                        
-static void save_configuration_action                           (LauncherEngine        *engine,
-                                                                 LauncherConfiguration *configuration);
-                                                  
-static CodeSlayerProject* get_selections_project                (GList                 *selections);
-static void launch_executable                                   (LauncherEngine        *engine, 
-                                                                 CodeSlayerProject     *project);
-                                                                 
-static gchar* get_configuration_file_path                       (LauncherEngine        *engine);
-                                                                 
+static void run_action                            (LauncherEngine      *engine);
+static void project_run_action                    (LauncherEngine      *engine, 
+                                                   GList               *selections);
+static LauncherConfig* get_config_by_project      (LauncherEngine      *engine, 
+                                                   CodeSlayerProject   *project);
+static void project_properties_opened_action      (LauncherEngine      *engine,
+                                                   CodeSlayerProject   *project);
+static void project_properties_saved_action       (LauncherEngine      *engine,
+                                                   CodeSlayerProject   *project);                                                                        
+static void save_config_action                    (LauncherEngine      *engine,
+                                                   LauncherConfig      *config);                                                  
+static CodeSlayerProject* get_selections_project  (GList               *selections);
+static void launch_executable                     (LauncherEngine      *engine, 
+                                                   CodeSlayerProject   *project);
 
 #define LAUNCHER_ENGINE_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), LAUNCHER_ENGINE_TYPE, LauncherEnginePrivate))
@@ -58,7 +57,7 @@ struct _LauncherEnginePrivate
   GtkWidget  *menu;
   GtkWidget  *project_properties;
   GtkWidget  *projects_menu;
-  GList      *configurations;
+  GList      *configs;
   gulong      properties_opened_id;
   gulong      properties_saved_id;
 };
@@ -78,7 +77,7 @@ launcher_engine_init (LauncherEngine *engine)
 {
   LauncherEnginePrivate *priv;
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);  
-  priv->configurations = NULL;
+  priv->configs = NULL;
 }
 
 static void
@@ -86,11 +85,11 @@ launcher_engine_finalize (LauncherEngine *engine)
 {
   LauncherEnginePrivate *priv;
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);  
-  if (priv->configurations != NULL)
+  if (priv->configs != NULL)
     {
-      g_list_foreach (priv->configurations, (GFunc) g_object_unref, NULL);
-      g_list_free (priv->configurations);
-      priv->configurations = NULL;    
+      g_list_foreach (priv->configs, (GFunc) g_object_unref, NULL);
+      g_list_free (priv->configs);
+      priv->configs = NULL;    
     }
   
   g_signal_handler_disconnect (priv->codeslayer, priv->properties_opened_id);
@@ -128,155 +127,119 @@ launcher_engine_new (CodeSlayer *codeslayer,
   priv->properties_saved_id = g_signal_connect_swapped (G_OBJECT (codeslayer), "project-properties-saved",
                                                         G_CALLBACK (project_properties_saved_action), engine);
 
-  g_signal_connect_swapped (G_OBJECT (project_properties), "save-configuration",
-                            G_CALLBACK (save_configuration_action), engine);
+  g_signal_connect_swapped (G_OBJECT (project_properties), "save-config",
+                            G_CALLBACK (save_config_action), engine);
 
   return engine;
 }
 
-void 
-launcher_engine_load_configurations (LauncherEngine *engine)
+static LauncherConfig*
+get_config_by_project (LauncherEngine    *engine, 
+                       CodeSlayerProject *project)
 {
   LauncherEnginePrivate *priv;
-  GList *configurations;
+  LauncherConfig *config;
+  GKeyFile *keyfile;
+  gchar *folder_path;
   gchar *file_path;
-
-  priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
+  gchar *executable;
+  gchar *parameters;
+  gboolean terminal;
   
-  file_path = get_configuration_file_path (engine);
-  configurations = codeslayer_utils_get_gobjects (LAUNCHER_CONFIGURATION_TYPE,
-                                                  FALSE,
-                                                  file_path, 
-                                                  "launcher",
-                                                  "project_key", G_TYPE_STRING,
-                                                  "executable", G_TYPE_STRING,
-                                                  "parameters", G_TYPE_STRING,
-                                                  "terminal", G_TYPE_BOOLEAN, 
-                                                  NULL);
-  priv->configurations = configurations;
-  g_free (file_path);
-}
-
-static LauncherConfiguration*
-get_configuration_by_project_key (LauncherEngine *engine, 
-                                  const gchar    *project_key)
-{
-  LauncherEnginePrivate *priv;
-  GList *list;
-
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
 
-  list = priv->configurations;
-  while (list != NULL)
+  folder_path = codeslayer_get_project_config_folder_path (priv->codeslayer, project);
+  file_path = g_build_filename (folder_path, LAUNCHER_CONF, NULL);
+  
+  if (!codeslayer_utils_file_exists (file_path))
     {
-      LauncherConfiguration *configuration = list->data;
-      const gchar *key;
-      
-      key = launcher_configuration_get_project_key (configuration);
-      
-      if (g_strcmp0 (project_key, key) == 0)
-        return configuration;
-
-      list = g_list_next (list);
+      g_free (folder_path);
+      g_free (file_path);
+      return NULL;
     }
 
-  return NULL;
+  keyfile = codeslayer_utils_get_keyfile (file_path);
+  executable = g_key_file_get_string (keyfile, MAIN, EXECUTABLE, NULL);
+  parameters = g_key_file_get_string (keyfile, MAIN, PARAMETERS, NULL);
+  terminal = g_key_file_get_boolean (keyfile, MAIN, TERMINAL, NULL);
+  
+  config = launcher_config_new ();
+  launcher_config_set_project (config, project);
+  launcher_config_set_executable (config, executable);
+  launcher_config_set_parameters (config, parameters);
+  launcher_config_set_terminal (config, terminal);
+  
+  g_free (folder_path);
+  g_free (file_path);
+  g_free (executable);
+  g_free (parameters);
+  g_key_file_free (keyfile);
+  
+  return config;
 }
 
 static void
-project_properties_opened_action (LauncherEngine      *engine,
+project_properties_opened_action (LauncherEngine    *engine,
                                   CodeSlayerProject *project)
 {
   LauncherEnginePrivate *priv;
-  const gchar *project_key;
-  LauncherConfiguration *configuration;
+  LauncherConfig *config;
   
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
 
-  project_key = codeslayer_project_get_key (project);
-  configuration = get_configuration_by_project_key (engine, project_key);
-  
+  config = get_config_by_project (engine, project);
   launcher_project_properties_opened (LAUNCHER_PROJECT_PROPERTIES (priv->project_properties),
-                                      configuration, project);
+                                      config, project);
+  if (config != NULL)
+    g_object_unref (config);                                       
 }
 
 static void
-project_properties_saved_action (LauncherEngine      *engine,
+project_properties_saved_action (LauncherEngine    *engine,
                                  CodeSlayerProject *project)
 {
   LauncherEnginePrivate *priv;
-  const gchar *project_key;
-  LauncherConfiguration *configuration;
+  LauncherConfig *config;
   
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
 
-  project_key = codeslayer_project_get_key (project);
-  configuration = get_configuration_by_project_key (engine, project_key);
-  
+  config = get_config_by_project (engine, project);
   launcher_project_properties_saved (LAUNCHER_PROJECT_PROPERTIES (priv->project_properties),
-                                     configuration, project);
+                                     config, project);
+  if (config != NULL)
+    g_object_unref (config);                                       
 }
 
 static void
-save_configuration_action (LauncherEngine        *engine,
-                           LauncherConfiguration *configuration)
+save_config_action (LauncherEngine *engine,
+                    LauncherConfig *config)
 {
   LauncherEnginePrivate *priv;
-  GList *list;
-  GList *tmp;
-  gchar *file_path;
-    
-  priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
-  
-  if (configuration)
-    priv->configurations = g_list_prepend (priv->configurations, configuration);
-
-  list = g_list_copy (priv->configurations);
-  tmp = list;
-  
-  while (tmp != NULL)
-    {
-      LauncherConfiguration *configuration = tmp->data;
-      const gchar *executable;
-      const gchar *parameters;
-
-      executable = launcher_configuration_get_executable (configuration);
-      parameters = launcher_configuration_get_parameters (configuration);
-      
-      if (g_utf8_strlen (executable, -1) == 0 &&
-          g_utf8_strlen (parameters, -1) == 0)
-      priv->configurations = g_list_remove (priv->configurations, configuration);
-      tmp = g_list_next (tmp);
-    }
-    
-  g_list_free (list);
-  
-  file_path = get_configuration_file_path (engine);  
-  codeslayer_utils_save_gobjects (priv->configurations,
-                                  file_path, 
-                                  "launcher",
-                                  "project_key", G_TYPE_STRING,
-                                  "executable", G_TYPE_STRING,
-                                  "parameters", G_TYPE_STRING,
-                                  "terminal", G_TYPE_BOOLEAN, 
-                                  NULL);  
-  g_free (file_path);
-}
-
-static gchar*
-get_configuration_file_path (LauncherEngine *engine)
-{
-  LauncherEnginePrivate *priv;
+  CodeSlayerProject *project;
   gchar *folder_path;
   gchar *file_path;
-  
+  const gchar *executable;
+  const gchar *parameters;
+  gboolean terminal;
+  GKeyFile *keyfile;
+ 
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
 
-  folder_path = codeslayer_get_active_group_folder_path (priv->codeslayer);  
-  file_path = g_build_filename (folder_path, "launchers.xml", NULL);
-  g_free (folder_path);
-  
-  return file_path;
+  project = launcher_config_get_project (config);  
+  folder_path = codeslayer_get_project_config_folder_path (priv->codeslayer, project);
+  file_path = codeslayer_utils_get_file_path (folder_path, LAUNCHER_CONF);
+  keyfile = codeslayer_utils_get_keyfile (file_path);
+
+  executable = launcher_config_get_executable (config);
+  parameters = launcher_config_get_parameters (config);
+  terminal = launcher_config_get_terminal (config);
+  g_key_file_set_string (keyfile, MAIN, EXECUTABLE, executable);
+  g_key_file_set_string (keyfile, MAIN, PARAMETERS, parameters);
+  g_key_file_set_boolean (keyfile, MAIN, TERMINAL, terminal);
+
+  codeslayer_utils_save_keyfile (keyfile, file_path);  
+  g_key_file_free (keyfile);
+  g_free (file_path); 
 }
 
 static void
@@ -316,16 +279,13 @@ launch_executable (LauncherEngine    *engine,
                    CodeSlayerProject *project)
 {
   GAppInfo *appinfo;
-  LauncherConfiguration *configuration;
-  const gchar *project_key;
+  LauncherConfig *config;
   const gchar *executable;
   const gchar *parameters;
 
-  project_key = codeslayer_project_get_key (project);
+  config = get_config_by_project (engine, project);
   
-  configuration = get_configuration_by_project_key (engine, project_key);
-  
-  if (configuration == NULL)
+  if (config == NULL)
     {
       GtkWidget *dialog;
       gchar *msg;
@@ -333,7 +293,7 @@ launch_executable (LauncherEngine    *engine,
       
       project_name = codeslayer_project_get_name (project);
       
-      msg = g_strconcat ("There is no launch configuration for project ", 
+      msg = g_strconcat ("There is no launch config for project ", 
                          project_name, ".", NULL);      
       dialog =  gtk_message_dialog_new (NULL, 
                                         GTK_DIALOG_MODAL,
@@ -346,10 +306,10 @@ launch_executable (LauncherEngine    *engine,
       return;
     }
   
-  executable = launcher_configuration_get_executable (configuration);
-  parameters = launcher_configuration_get_parameters (configuration);
+  executable = launcher_config_get_executable (config);
+  parameters = launcher_config_get_parameters (config);
 
-  if (launcher_configuration_get_terminal (configuration))
+  if (launcher_config_get_terminal (config))
     {
       gchar *command;              
       command = g_strconcat (executable, " ", parameters, NULL);

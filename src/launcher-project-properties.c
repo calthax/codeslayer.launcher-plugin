@@ -60,12 +60,12 @@ launcher_project_properties_class_init (LauncherProjectPropertiesClass *klass)
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   launcher_project_properties_signals[SAVE_CONFIGURATION] =
-    g_signal_new ("save-configuration", 
+    g_signal_new ("save-config", 
                   G_TYPE_FROM_CLASS (klass),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS,
-                  G_STRUCT_OFFSET (LauncherProjectPropertiesClass, save_configuration), 
+                  G_STRUCT_OFFSET (LauncherProjectPropertiesClass, save_config), 
                   NULL, NULL,
-                  g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1, LAUNCHER_CONFIGURATION_TYPE);
+                  g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1, LAUNCHER_CONFIG_TYPE);
 
   gobject_class->finalize = (GObjectFinalizeFunc) launcher_project_properties_finalize;
   g_type_class_add_private (klass, sizeof (LauncherProjectPropertiesPrivate));
@@ -110,7 +110,7 @@ add_form (LauncherProjectProperties *project_properties)
   grid = gtk_grid_new ();
   gtk_grid_set_row_spacing (GTK_GRID (grid), 2);
 
-  executable_label = gtk_label_new ("Executable:");
+  executable_label = gtk_label_new (_("Executable:"));
   gtk_misc_set_alignment (GTK_MISC (executable_label), 1, .5);
   gtk_misc_set_padding (GTK_MISC (executable_label), 4, 0);
   gtk_grid_attach (GTK_GRID (grid), executable_label, 0, 0, 1, 1);
@@ -123,7 +123,7 @@ add_form (LauncherProjectProperties *project_properties)
   gtk_grid_attach_next_to (GTK_GRID (grid), executable_entry, executable_label, 
                            GTK_POS_RIGHT, 1, 1);
                       
-  parameters_label = gtk_label_new ("Parameters:");
+  parameters_label = gtk_label_new (_("Parameters:"));
   gtk_misc_set_alignment (GTK_MISC (parameters_label), 1, .5);
   gtk_misc_set_padding (GTK_MISC (parameters_label), 4, 0);
   gtk_grid_attach (GTK_GRID (grid), parameters_label, 0, 1, 1, 1);
@@ -137,7 +137,7 @@ add_form (LauncherProjectProperties *project_properties)
   spacer = gtk_label_new ("");
   gtk_grid_attach (GTK_GRID (grid), spacer, 0, 2, 1, 1);
 
-  terminal_check_button = gtk_check_button_new_with_label ("Run In Terminal");
+  terminal_check_button = gtk_check_button_new_with_label (_("Run In Terminal"));
   priv->terminal_check_button = terminal_check_button;
   hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);                      
   gtk_box_pack_start (GTK_BOX (hbox), terminal_check_button, FALSE, FALSE, 0);
@@ -194,7 +194,7 @@ executable_icon_action (GtkEntry                   *executable_entry,
 
 void 
 launcher_project_properties_opened (LauncherProjectProperties *project_properties,
-                                    LauncherConfiguration     *configuration, 
+                                    LauncherConfig     *config, 
                                     CodeSlayerProject         *project)
 {
   LauncherProjectPropertiesPrivate *priv;
@@ -202,15 +202,15 @@ launcher_project_properties_opened (LauncherProjectProperties *project_propertie
   priv = LAUNCHER_PROJECT_PROPERTIES_GET_PRIVATE (project_properties);  
   priv->project = project;
   
-  if (configuration)
+  if (config)
     {
       const gchar *executable;
       const gchar *parameters;
       gboolean terminal;
     
-      executable = launcher_configuration_get_executable (configuration);
-      parameters = launcher_configuration_get_parameters (configuration);
-      terminal = launcher_configuration_get_terminal (configuration);
+      executable = launcher_config_get_executable (config);
+      parameters = launcher_config_get_parameters (config);
+      terminal = launcher_config_get_terminal (config);
 
       gtk_entry_set_text (GTK_ENTRY (priv->executable_entry), executable);
       gtk_entry_set_text (GTK_ENTRY (priv->parameters_entry), parameters);
@@ -228,7 +228,7 @@ launcher_project_properties_opened (LauncherProjectProperties *project_propertie
 
 void 
 launcher_project_properties_saved (LauncherProjectProperties *project_properties,
-                                   LauncherConfiguration     *configuration, 
+                                   LauncherConfig     *config, 
                                    CodeSlayerProject         *project)
 {
   LauncherProjectPropertiesPrivate *priv;
@@ -245,32 +245,31 @@ launcher_project_properties_saved (LauncherProjectProperties *project_properties
   g_strstrip (executable);
   g_strstrip (parameters);
   
-  if (configuration)
+  if (config != NULL)
     {
-      if (g_strcmp0 (executable, launcher_configuration_get_executable (configuration)) == 0 &&
-          g_strcmp0 (parameters, launcher_configuration_get_parameters (configuration)) == 0 &&
-          terminal == launcher_configuration_get_terminal (configuration))
+      if (g_strcmp0 (executable, launcher_config_get_executable (config)) == 0 &&
+          g_strcmp0 (parameters, launcher_config_get_parameters (config)) == 0 &&
+          terminal == launcher_config_get_terminal (config))
         {
           g_free (executable);
           g_free (parameters);
           return;
         }
 
-      launcher_configuration_set_executable (configuration, executable);
-      launcher_configuration_set_parameters (configuration, parameters);
-      launcher_configuration_set_terminal (configuration, terminal);
-      g_signal_emit_by_name((gpointer)project_properties, "save-configuration", NULL);
+      launcher_config_set_executable (config, executable);
+      launcher_config_set_parameters (config, parameters);
+      launcher_config_set_terminal (config, terminal);
+      g_signal_emit_by_name((gpointer)project_properties, "save-config", config);
     }
   else if (entry_has_text (priv->executable_entry))
     {
-      LauncherConfiguration *configuration;
-      const gchar *project_key;
-      configuration = launcher_configuration_new ();
-      project_key = codeslayer_project_get_key (project);
-      launcher_configuration_set_project_key (configuration, project_key);
-      launcher_configuration_set_executable (configuration, executable);
-      launcher_configuration_set_parameters (configuration, parameters);
-      g_signal_emit_by_name((gpointer)project_properties, "save-configuration", configuration);
+      LauncherConfig *config;
+      config = launcher_config_new ();
+      launcher_config_set_project (config, project);
+      launcher_config_set_executable (config, executable);
+      launcher_config_set_parameters (config, parameters);
+      g_signal_emit_by_name((gpointer)project_properties, "save-config", config);
+      g_object_unref (config);
     }
     
   g_free (executable);

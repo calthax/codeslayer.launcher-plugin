@@ -43,7 +43,6 @@ activate (CodeSlayer *codeslayer)
   project_properties = launcher_project_properties_new ();
   projects_popup = launcher_projects_popup_new ();
   engine = launcher_engine_new (codeslayer, menu, project_properties, projects_popup);
-  launcher_engine_load_configurations (engine);
 
   codeslayer_add_to_menubar (codeslayer, GTK_MENU_ITEM (menu));
   codeslayer_add_to_projects_popup (codeslayer, GTK_MENU_ITEM (projects_popup));
