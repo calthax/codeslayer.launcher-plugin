@@ -268,6 +268,7 @@ launcher_project_properties_saved (LauncherProjectProperties *project_properties
       launcher_config_set_project (config, project);
       launcher_config_set_executable (config, executable);
       launcher_config_set_parameters (config, parameters);
+      launcher_config_set_terminal (config, terminal);
       g_signal_emit_by_name((gpointer)project_properties, "save-config", config);
       g_object_unref (config);
     }
