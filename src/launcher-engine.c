@@ -139,7 +139,7 @@ get_config_by_project (LauncherEngine    *engine,
 {
   LauncherEnginePrivate *priv;
   LauncherConfig *config;
-  GKeyFile *keyfile;
+  GKeyFile *key_file;
   gchar *folder_path;
   gchar *file_path;
   gchar *executable;
@@ -158,10 +158,10 @@ get_config_by_project (LauncherEngine    *engine,
       return NULL;
     }
 
-  keyfile = codeslayer_utils_get_keyfile (file_path);
-  executable = g_key_file_get_string (keyfile, MAIN, EXECUTABLE, NULL);
-  parameters = g_key_file_get_string (keyfile, MAIN, PARAMETERS, NULL);
-  terminal = g_key_file_get_boolean (keyfile, MAIN, TERMINAL, NULL);
+  key_file = codeslayer_utils_get_key_file (file_path);
+  executable = g_key_file_get_string (key_file, MAIN, EXECUTABLE, NULL);
+  parameters = g_key_file_get_string (key_file, MAIN, PARAMETERS, NULL);
+  terminal = g_key_file_get_boolean (key_file, MAIN, TERMINAL, NULL);
   
   config = launcher_config_new ();
   launcher_config_set_project (config, project);
@@ -173,7 +173,7 @@ get_config_by_project (LauncherEngine    *engine,
   g_free (file_path);
   g_free (executable);
   g_free (parameters);
-  g_key_file_free (keyfile);
+  g_key_file_free (key_file);
   
   return config;
 }
@@ -221,24 +221,24 @@ save_config_action (LauncherEngine *engine,
   const gchar *executable;
   const gchar *parameters;
   gboolean terminal;
-  GKeyFile *keyfile;
+  GKeyFile *key_file;
  
   priv = LAUNCHER_ENGINE_GET_PRIVATE (engine);
 
   project = launcher_config_get_project (config);  
   folder_path = codeslayer_get_project_config_folder_path (priv->codeslayer, project);
   file_path = codeslayer_utils_get_file_path (folder_path, LAUNCHER_CONF);
-  keyfile = codeslayer_utils_get_keyfile (file_path);
+  key_file = codeslayer_utils_get_key_file (file_path);
 
   executable = launcher_config_get_executable (config);
   parameters = launcher_config_get_parameters (config);
   terminal = launcher_config_get_terminal (config);
-  g_key_file_set_string (keyfile, MAIN, EXECUTABLE, executable);
-  g_key_file_set_string (keyfile, MAIN, PARAMETERS, parameters);
-  g_key_file_set_boolean (keyfile, MAIN, TERMINAL, terminal);
+  g_key_file_set_string (key_file, MAIN, EXECUTABLE, executable);
+  g_key_file_set_string (key_file, MAIN, PARAMETERS, parameters);
+  g_key_file_set_boolean (key_file, MAIN, TERMINAL, terminal);
 
-  codeslayer_utils_save_keyfile (keyfile, file_path);  
-  g_key_file_free (keyfile);
+  codeslayer_utils_save_key_file (key_file, file_path);  
+  g_key_file_free (key_file);
   g_free (folder_path);
   g_free (file_path); 
 }
